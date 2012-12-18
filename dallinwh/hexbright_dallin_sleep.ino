@@ -5,24 +5,22 @@
   Every button press adds 30 seconds to the lights running time.
 */
 
+#include <Wire.h>
+
 // Pin assignments
 #define DPIN_RLED_SW            2
 #define DPIN_GLED               5
 #define DPIN_PWR                8
 #define DPIN_DRV_MODE           9
 #define DPIN_DRV_EN             10
-// Modes
-#define MODE_OFF                0
-#define MODE_ON                 1
 
-byte mode;
 boolean btnDown;
 unsigned long lastTime, btnTime, counter;
 
 void setup()
 {
-  pinMode(DPIN_PWR,      INPUT);
-  digitalWrite(DPIN_PWR, LOW);
+  pinMode(DPIN_PWR,      OUTPUT);
+  digitalWrite(DPIN_PWR, HIGH);
 
   // Initialize GPIO
   pinMode(DPIN_RLED_SW,  INPUT);
@@ -33,9 +31,14 @@ void setup()
   digitalWrite(DPIN_DRV_EN,   LOW);
   digitalWrite(DPIN_GLED, HIGH);
  
-  mode = MODE_OFF;
+   // Initialize serial busses
+  Serial.begin(9600);
+  Wire.begin();
+ 
   btnDown = digitalRead(DPIN_RLED_SW);
   btnTime = millis();
+  lastTime = millis();
+  counter = 0;
 }
 
 void loop()
@@ -44,19 +47,24 @@ void loop()
   boolean newBtnDown = digitalRead(DPIN_RLED_SW);
  
   if (newBtnDown) {
-    counter += 30000;
-    digitalWrite(DPIN_DRV_EN, HIGH);
-  }
-  if (time-lastTime >= 100 && counter != 0){
-    if(time-lastTime >= counter) {
-      counter = 0;
-      digitalWrite(DPIN_DRV_EN, LOW);
+    if (counter < time){
+      counter = time + 30000;
     } else {
-      counter -= (time-lastTime);
+      counter += 30000;
     }
   }
+  
+  Serial.print(time);
+  Serial.print(' ');
+  Serial.println(counter);
+
   if (btnDown && newBtnDown && time-btnTime>200){
     counter = 0;
+  }
+
+  if (counter > time) {
+    digitalWrite(DPIN_DRV_EN, HIGH);
+  } else {
     digitalWrite(DPIN_DRV_EN, LOW);
   }
  
@@ -64,6 +72,7 @@ void loop()
   {
     btnTime = time;
     btnDown = newBtnDown;
-    delay(50);
+    delay(200);
   }
+  lastTime = time;
 }
