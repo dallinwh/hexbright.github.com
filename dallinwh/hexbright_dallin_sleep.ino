@@ -19,8 +19,8 @@ unsigned long lastTime, btnTime, counter;
 
 void setup()
 {
-  pinMode(DPIN_PWR,      OUTPUT);
-  digitalWrite(DPIN_PWR, HIGH);
+  pinMode(DPIN_PWR,      INPUT);
+  digitalWrite(DPIN_PWR, LOW);
 
   // Initialize GPIO
   pinMode(DPIN_RLED_SW,  INPUT);
@@ -30,10 +30,6 @@ void setup()
   digitalWrite(DPIN_DRV_MODE, LOW);
   digitalWrite(DPIN_DRV_EN,   LOW);
   digitalWrite(DPIN_GLED, HIGH);
- 
-   // Initialize serial busses
-  Serial.begin(9600);
-  Wire.begin();
  
   btnDown = digitalRead(DPIN_RLED_SW);
   btnTime = millis();
@@ -46,25 +42,25 @@ void loop()
   unsigned long time = millis();
   boolean newBtnDown = digitalRead(DPIN_RLED_SW);
  
-  if (newBtnDown) {
-    if (counter < time){
+  if (btnDown && !newBtnDown && (time-btnTime)>50) {
+    if (counter <= time){
       counter = time + 30000;
     } else {
       counter += 30000;
     }
   }
-  
-  Serial.print(time);
-  Serial.print(' ');
-  Serial.println(counter);
 
-  if (btnDown && newBtnDown && time-btnTime>200){
+  if (btnDown && time-btnTime>500){
     counter = 0;
   }
 
   if (counter > time) {
+    pinMode(DPIN_PWR,      OUTPUT);
+    digitalWrite(DPIN_PWR, HIGH);
     digitalWrite(DPIN_DRV_EN, HIGH);
   } else {
+    pinMode(DPIN_PWR,      OUTPUT);
+    digitalWrite(DPIN_PWR, LOW);
     digitalWrite(DPIN_DRV_EN, LOW);
   }
  
@@ -72,7 +68,8 @@ void loop()
   {
     btnTime = time;
     btnDown = newBtnDown;
-    delay(200);
+    delay(50);
   }
   lastTime = time;
 }
+
